@@ -1,13 +1,6 @@
-"""
-@Author: RMA-MUN
-@email: n3032747608@163.com
-@Date: 2026/06/02
-@Version: 2.3.0
-@Location: https://github.com/RMA-MUN/OnmyojiAuto
-"""
+"""FastAPI 后端开发入口；桌面端由 frontend/src-tauri 启动。"""
+from OAT.server.__main__ import main
 
-import sys
-from OAT.core.app_launcher import launch_app
 
 if __name__ == "__main__":
-    sys.exit(launch_app())
+    main()

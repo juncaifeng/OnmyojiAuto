@@ -20,6 +20,20 @@ OAT_Updater_Build/
 build/
 dist/
 *.spec
+!packaging/*.spec
+
+# 前端与 Rust 构建产物
+node_modules/
+frontend/dist/
+frontend/src-tauri/target/
+frontend/src-tauri/gen/
+frontend/src-tauri/binaries/*.exe
+frontend/.env
+frontend/.env.local
+
+# CI 在线解析生成的锁文件（本地禁止构建与依赖安装）
+frontend/package-lock.json
+frontend/src-tauri/Cargo.lock
 
 # 日志文件
 logs/

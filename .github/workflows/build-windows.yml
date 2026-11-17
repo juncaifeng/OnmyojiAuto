@@ -1,0 +1,68 @@
+name: Build Windows
+
+on:
+  workflow_call:
+    inputs:
+      channel:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and python-build-standalone
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+          python-version: "3.12"
+      - name: Force managed standalone Python
+        run: uv python install 3.12
+        env:
+          UV_PYTHON_PREFERENCE: only-managed
+
+      - name: Install locked Python dependencies
+        run: uv sync --frozen --group dev --group legacy --group build
+        env:
+          UV_PYTHON_PREFERENCE: only-managed
+
+      - name: Test Python backend and automation core
+        run: uv run --no-sync pytest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve and install frontend dependencies online
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+
+      - name: Build FastAPI sidecar
+        run: uv run --no-sync python scripts/build_backend.py
+        env:
+          UV_PYTHON_PREFERENCE: only-managed
+
+      - name: Build Tauri application
+        working-directory: frontend
+        run: npm run desktop:build
+
+      - name: Collect release artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          Copy-Item frontend/src-tauri/target/release/bundle/nsis/*.exe release/
+          Copy-Item dist/backend/oat-backend.exe release/oat-backend.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oat-windows-${{ inputs.channel }}
+          path: release/*
+          if-no-files-found: error
+          retention-days: 7

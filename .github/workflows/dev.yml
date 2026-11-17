@@ -1,0 +1,45 @@
+name: Dev Prerelease
+
+on:
+  push:
+    branches: [dev]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dev-prerelease
+  cancel-in-progress: true
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      channel: dev
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: oat-windows-dev
+          path: release
+
+      - name: Resolve development tag
+        id: meta
+        run: echo "tag=dev-${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish rolling development prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: OAT Dev ${{ steps.meta.outputs.tag }}
+          prerelease: true
+          draft: false
+          generate_release_notes: true
+          body: |
+            由 `dev` 分支提交 `${{ github.sha }}` 自动构建。
+            此版本用于开发验证，不作为稳定版本发布。
+          files: release/*

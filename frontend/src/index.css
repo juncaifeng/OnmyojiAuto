@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 20% 98%; --foreground: 240 10% 10%;
+    --card: 0 0% 100%; --card-foreground: 240 10% 10%;
+    --primary: 352 72% 48%; --primary-foreground: 0 0% 100%;
+    --secondary: 240 8% 93%; --secondary-foreground: 240 8% 18%;
+    --muted: 240 8% 94%; --muted-foreground: 240 5% 45%;
+    --accent: 350 60% 95%; --accent-foreground: 352 72% 38%;
+    --destructive: 0 72% 48%; --destructive-foreground: 0 0% 100%;
+    --border: 240 8% 88%; --input: 240 8% 84%; --ring: 352 72% 48%; --radius: 0.75rem;
+  }
+  .dark {
+    --background: 240 12% 7%; --foreground: 240 10% 96%;
+    --card: 240 10% 10%; --card-foreground: 240 10% 96%;
+    --primary: 352 76% 58%; --primary-foreground: 0 0% 100%;
+    --secondary: 240 7% 16%; --secondary-foreground: 240 10% 94%;
+    --muted: 240 7% 15%; --muted-foreground: 240 6% 65%;
+    --accent: 350 24% 17%; --accent-foreground: 352 80% 72%;
+    --destructive: 0 65% 48%; --destructive-foreground: 0 0% 100%;
+    --border: 240 7% 19%; --input: 240 7% 24%; --ring: 352 76% 58%;
+  }
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground antialiased; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { @apply rounded-full bg-muted-foreground/30; }
+::-webkit-scrollbar-track { background: transparent; }

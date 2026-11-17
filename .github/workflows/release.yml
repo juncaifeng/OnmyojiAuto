@@ -1,0 +1,50 @@
+name: Tagged Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tagged-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure tag matches application version
+        run: |
+          VERSION=$(node -p "require('./frontend/package.json').version")
+          test "${GITHUB_REF_NAME}" = "v${VERSION}" || {
+            echo "Tag ${GITHUB_REF_NAME} 与前端版本 v${VERSION} 不一致"
+            exit 1
+          }
+
+  build:
+    needs: verify-version
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      channel: stable
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: oat-windows-stable
+          path: release
+
+      - name: Publish stable release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: OAT ${{ github.ref_name }}
+          prerelease: false
+          draft: false
+          generate_release_notes: true
+          files: release/*

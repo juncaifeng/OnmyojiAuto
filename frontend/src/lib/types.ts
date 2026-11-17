@@ -1,0 +1,10 @@
+export type Mode = { name: string; sub_modes: string[] };
+export type Client = { id: string; label: string; title: string; hwnd: number | null; kind: "pc" | "emulator"; pid: number | null };
+export type TaskStatus = "idle" | "running" | "paused" | "stopping" | "stopped" | "completed" | "failed";
+export type TaskRequest = { mode: string; sub_mode: string; times: number; client: { hwnd: number | null; title: string }; hidden_window: boolean; sync_mode: boolean; explore_per_round: number | null; explore_only: boolean };
+export type TaskState = { status: TaskStatus; error: string | null; done: number; total: number; paused: boolean; request: TaskRequest | null };
+export type SyncState = { enabled: boolean; main_hwnd: number | null; sub_hwnds: number[] };
+export type Settings = { theme: "light" | "dark"; close_program_after_challenge: boolean; close_game_after_challenge: boolean; sync_mode: "exactly_sync" | "program_sync" | "input_sync"; find_value: number; find_mode: "opencv" | "pyscreeze"; custom_res_width: number; custom_res_height: number; window_arrange_mode: "diagonal" | "tile"; windows_per_row: number; capture_window_mode: "PrintWindow" | "BitBlt"; emulator_type: "pc" | "mumu12"; mumu_folder: string };
+export type LogRecord = { timestamp: string; level: string; message: string; module?: string };
+export type AppEvent = { type: "log" | "progress" | "task" | "sync" | "multi"; timestamp: string; data: unknown };
+export type MultiInstance = { id: number; pid: number | null; status: string; launched_at: string };

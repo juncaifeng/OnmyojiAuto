@@ -1,207 +1,103 @@
 # OnmyojiAuto - 阴阳师自动化
 
-<div align="center">
-    <img src="https://img.shields.io/badge/version-v2.3.3-blue.svg" alt="Version">
-    <img src="https://img.shields.io/badge/system-Windows-blue.svg" alt="System">
-    <img src="https://img.shields.io/badge/python-v3.12.4-blue.svg" alt="System">
-</div>
+Windows 平台的《阴阳师》图像识别自动化工具。当前版本 **2.3.4**。
 
+## 新架构
 
+```text
+Tauri v2 桌面窗口（Rust）
+  └─ 直接创建 oat-backend.exe 子进程（不使用 shell）
+       └─ FastAPI（仅监听 127.0.0.1，随机令牌认证）
+            └─ 原有 OpenCV / RapidOCR / Win32 / MuMu 自动化核心
 
-
-
-
-
----
-
-## 📥 程序下载 & 更新日志
-
-| 功能              | 链接                                                         |
-| ----------------- | :----------------------------------------------------------- |
-| 下载最新exe压缩包 | [立即下载](https://github.com/RMA-MUN/OnmyojiAuto/releases/download/OAT-v2.3.3/OAT-v2.3.3.zip) |
-| 查看版本更新内容  | [前往查看](https://github.com/RMA-MUN/OnmyojiAuto/releases/latest) |
-
----
-
-## 📸 程序截图
-
-|                        运行截图                        |
-| :----------------------------------------------------: |
-|           ![运行图片](./img_pages/home.png)            |
-|                同步器和窗口预览功能展示                |
-| ![同步器和窗口预览功能展示](./img_pages/sync_page.png) |
-|                        设置页面                        |
-|        ![背景图片](./img_pages/background.png)         |
-
----
-
-## 📌 项目简介
-
-OnmyojiAuto是一款基于Python开发的阴阳师游戏自动化辅助工具，通过计算机视觉技术实现游戏内的图像识别与自动点击，帮助玩家完成各类副本任务。工具支持多窗口同步操作，配备直观的GUI界面，降低使用门槛。
-
----
-
-## ✨ 功能特性
-
-- **🖥️ 多客户端支持**：兼容阴阳师桌面版与MuMu模拟器
-- **🎯 丰富副本覆盖**：支持魂土、魂王、业原火、觉醒、爬塔（门票/体力）、灵染试炼、御灵、契灵探查等多种副本
-- **🎨 便捷操作体验**：图形化界面（GUI）设计，支持模式选择、次数设置等可视化操作
-- **🔄 多窗口协同**：支持桌面版窗口同步功能，可实现主窗口操作同步至副窗口
-- **🎮 后台运行模式**：可选择后台运行，不占用鼠标和屏幕(后台运行仅支持桌面版)
-
----
-
-## 🛠️ 源码运行步骤(需要python和git环境,非开发者不推荐)
-
-### 1. 克隆仓库
-
-```bash
-git clone https://github.com/RMA-MUN/OnmyojiAuto.git
-cd OnmyojiAuto
+React + Vite + shadcn/ui
+  └─ HTTP + WebSocket 调用本地 FastAPI
 ```
 
-### 2. 安装依赖
+- 前端不直接访问 Windows 自动化对象，也没有任意命令执行接口。
+- Tauri 未启用 `tauri-plugin-shell`，使用 Rust `std::process::Command` 和参数数组启动 sidecar。
+- FastAPI 提供任务、日志、设置、客户端预览、窗口同步与多开 API。
+- 旧 `OAT/app` PyQt 页面仅作迁移参考，不再是默认入口。
 
-使用uv包管理器安装项目依赖（推荐使用uv进行包管理，速度更快且更稳定）：
+## 主要功能
 
-#### 安装uv（如果尚未安装）
-```bash
-pip install uv
+- 魂土、魂王、业原火、觉醒、爬塔、灵染试炼、御灵、契灵探查、结界突破、绘卷刷分。
+- 阴阳师桌面版与 MuMu 模拟器。
+- 前台/后台识别、窗口预览、多窗口同步和多开管理。
+- 实时日志、挑战进度、暂停与停止。
+
+## 目录
+
+```text
+OAT/server/              FastAPI 路由、模型、事件总线和服务层
+OAT/source/              副本声明式配置、模板和绘卷脚本
+OAT/pipeline/            识别与任务管道
+frontend/                React + Vite + shadcn/ui
+frontend/src-tauri/      Tauri v2 Rust 壳与 sidecar 生命周期
+scripts/build_backend.py CI 中的 sidecar 构建脚本
+packaging/               PyInstaller spec
+.github/workflows/       dev prerelease 与 tag 正式 release
 ```
 
-#### 使用uv创建虚拟环境并安装依赖
-```bash
-# 创建并激活虚拟环境
-uv venv
-uv venv activate
+## 依赖与 Python 运行时
 
-# 安装项目依赖
-uv sync
+Python 依赖统一由 **uv + `pyproject.toml` + `uv.lock`** 管理，不再使用 `requirements.txt`。打包时 CI 设置：
+
+```text
+UV_PYTHON_PREFERENCE=only-managed
+uv python install 3.12
 ```
 
-**核心依赖说明**：
-- `opencv-python`：图像识别
-- `PyQt6`：GUI界面开发
-- `pywin32`：Windows窗口控制
-- `rapidocr`：文字识别
-- `numpy`：数值计算
-- `requests`：网络请求
+uv 下载的 managed CPython 来自 **python-build-standalone**，随后用 PyInstaller 生成 `oat-backend.exe`，Tauri 将它作为 externalBin sidecar 打进 NSIS 安装包。旧 Nuitka 构建流程已移除。
 
-### 3. 环境配置
+## GitHub Actions 构建与发布
 
-- ✅ 推荐使用**阴阳师桌面版**([下载链接](https://adl.netease.com/d/g/a11/c/yx_yys))
-- ✅ 确保程序以**管理员身份**运行
-- ✅ 如不启用后台模式，请保证窗口可见
+本项目要求**所有构建、打包和测试都在 GitHub Actions 在线执行**。
 
----
+### dev：每次提交自动发布 prerelease
 
-## 🚀 使用指南
+推送到 `dev` 分支触发 `.github/workflows/dev.yml`：
 
-### 基本操作
+1. 安装 uv 和 python-build-standalone Python 3.12。
+2. 在线安装锁定依赖并运行 pytest。
+3. 构建 FastAPI sidecar、React 和 Tauri NSIS 安装包。
+4. 创建 `dev-<run_number>-<short_sha>` prerelease 并上传安装包。
 
-1. **启动程序**：
-   
-   ```bash
-   python main.py
-   ```
-   
-2. **配置客户端**：
-    - 选择客户端类型（推荐阴阳师桌面版）
-    - 如需自定义客户端，可在`client.json`中添加
+```bash
+git switch dev
+git add -A
+git commit -m "feat: your change"
+git push origin dev
+gh run list --workflow dev.yml --limit 5
+gh run watch
+```
 
-3. **选择副本模式**：
-   
-    - 选择目标副本（如"魂土"、"爬塔"等）
-    - 部分模式需选择子模式（如魂土的"队长"或"队员"）
-    - 可在`OAT/source/mode.json`中添加和修改模式配置
-    
-4. **设置挑战参数**：
+### tags：只有版本标签触发正式 release
 
-    - 设置挑战次数（1-10000次）
-    - 点击"窗口检测"确认游戏窗口识别正常
+`.github/workflows/release.yml` 只监听 `v*` 标签，且标签必须与应用版本一致。例如版本为 `2.3.4`：
 
-5. **选择运行模式**：
-    - 根据需求选择不同的客户端
-    - 选择是否启用后台运行模式
+```bash
+git tag v2.3.4
+git push origin v2.3.4
+gh run list --workflow release.yml --limit 5
+gh run watch
+```
 
-6. **启动任务**：
-    - 点击"开始挑战"启动自动化任务
-    - 可通过"紧急停止"强行退出程序
+正式 release 只由标签工作流创建，普通提交不会触发。
 
----
+## 本地开发接口说明
 
-## 🔄 多窗口同步功能
+以下是接口说明，**CI 迁移验证期间不要在本地执行构建或测试命令**：
 
-### 使用步骤
+- API 前缀：`/api/v1`
+- 健康检查：`GET /health`
+- 事件流：`WebSocket /events?token=...`
+- 其他接口要求 `X-OAT-Token` 请求头。
+- 服务只接受回环监听地址，生产环境由 Tauri 随机选择端口与令牌。
 
-1. **刷新窗口**：点击"刷新窗口"按钮获取当前所有符合条件的窗口列表
-    - 如需自定义窗口标题，可在`client.json`文件中配置
+## 使用注意
 
-2. **选择窗口**：在表格中勾选需要参与同步的窗口
-
-3. **设置主副窗口**：
-    - 选择一个窗口并点击"设置主窗口"（作为操作源）
-    - 选择一个或多个窗口并点击"设置副窗口"（跟随主窗口操作）
-
-4. **窗口排列**：点击"窗口排列"按钮，系统会自动排列所有选择的窗口
-
-5. **同步控制**：
-    - 点击"开始同步"按钮启动同步功能
-    - 点击"停止同步"按钮停止同步功能
-
-### 注意事项
-
-- ⚠️ 主窗口只能设置一个
-- ⚠️ 副窗口至少设置一个
-- ⚠️ 开始同步前请确保已正确设置主窗口和副窗口
-- ⚠️ 同步过程中请勿关闭主窗口
-- ⚠️ 如需调整同步窗口，建议先停止同步
-
----
-
-## ⚠️ 注意事项
-
-1. 📐 确保游戏窗口分辨率稳定，避免窗口缩放导致识别偏移
-2. 💻 程序仅支持Windows操作系统(测试环境：1920*1080分辨率下，125%的缩放。)
-3. 📝 本工具仅用于学习交流，如需对本程序进行修改，修改后的源代码必须采取GNU协议开源
-
----
-
-## ❓ 常见问题
-
-### Q: 窗口识别失败怎么办？
-A: 如果窗口标题不匹配，可在`client.json`中修改窗口标题部分。
-
-### Q: 图片识别错误如何解决？
-A: 验证`source`目录下对应副本的图片资源是否匹配当前游戏版本，可重新截图替换并保持对应文件名。引起识别错误的原因可能是预设图片与实际使用图片不符或设备分辨率不同，建议自行截图替换。
-
-### Q: 多窗口同步失效如何处理？
-A: 确认主窗口和副窗口均已正确选择，主窗口需一直可见，副窗口可以最小化，但需确保主副窗口大小不变。
-
-### Q: 窗口检测与执行挑战无效怎么办？
-A: 确保本程序以管理员身份运行，确保窗口大小不变且可见。
-
-### Q：点击开始挑战之后，没有报错也没有反应怎么办？
-A：右键游戏程序，选择属性，兼容性，更改更高DPI设置，勾选替换高DPI缩放行为，然后点击确认和应用。重启游戏即可
-
-
-
----
-
-<div align="center">
-    <p>✨ 如还有问题或建议，欢迎提交 Issue ✨</p>
-</div>
-
----
-
-## 📜 许可证
-
-本项目采用 [GNU General Public License v3.0](LICENSE) 开源，允许自由使用、修改和分发，但衍生作品必须以相同许可证开源。
-
----
-
-## 📞 联系作者
-
-- 📧 邮箱：n3032747608@163.com
-- 🐧 QQ：3032747608
-- 📦 GitHub：[RMA-MUN/OnmyojiAuto](https://github.com/RMA-MUN)
+- 仅支持 Windows，窗口识别和后台控制通常需要管理员权限。
+- 保持游戏窗口分辨率稳定；模板不匹配时需更新 `OAT/source` 中对应图片。
+- PC 后台模式允许遮挡但不支持最小化；MuMu 可使用 IPC 后台通道。
+- 本项目采用 GPL v3，详见 `LICENSE`。

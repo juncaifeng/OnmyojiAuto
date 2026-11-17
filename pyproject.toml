@@ -1,34 +1,62 @@
 [project]
-name = "onmyojiproject"
-version = "0.1.0"
-description = "Add your description here"
+name = "onmyojiauto"
+version = "2.3.4"
+description = "Onmyoji automation with a FastAPI backend and Tauri desktop UI"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
+    "fastapi>=0.115,<1",
     "loguru>=0.7.3",
-    "nuitka>=4.0.7",
     "numpy<2",
     "onnxruntime==1.18.0",
     "opencv-python==4.8.0.74",
     "pillow==9.5.0",
     "psutil==7.0.0",
     "pyautogui==0.9.54",
-    "pyinstaller>=6.19.0",
+    "pydantic>=2.10,<3",
     "pynput==1.8.1",
-    "pyqt6==6.8.1",
-    "pyqt6-fluent-widgets[full]>=1.11.2",
     "pyscreeze==0.1.28",
-    "pywin32==310",
+    "pywin32==310; sys_platform == 'win32'",
     "pyyaml==6.0.1",
     "rapidocr==3.7.0",
     "requests==2.32.5",
     "tqdm==4.67.3",
     "urllib3>=2.0,<3",
+    "uvicorn[standard]>=0.34,<1",
+]
+
+[build-system]
+requires = ["uv_build>=0.10,<0.11"]
+build-backend = "uv_build"
+
+[tool.uv]
+package = true
+
+[tool.uv.build-backend]
+module-name = "OAT"
+module-root = ""
+
+[tool.uv.sources]
+# 所有依赖均从锁文件解析，不再从 Git 分支安装 GUI 组件。
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28,<1",
+    "pytest>=8.3,<9",
+    "pytest-asyncio>=0.25,<1",
+]
+build = [
+    "pyinstaller>=6.19,<7",
+]
+legacy = [
+    "pyqt6==6.8.1",
+    "pyqt6-fluent-widgets[full]>=1.11.2",
 ]
 
 [[tool.uv.index]]
 url = "https://mirrors.aliyun.com/pypi/simple"
 default = true
 
-[tool.uv.sources]
-pyqt6-fluent-widgets = { git = "https://github.com/zhiyiYo/PyQt-Fluent-Widgets.git", rev = "PyQt6" }
+[tool.pytest.ini_options]
+testpaths = ["test"]
+asyncio_mode = "auto"

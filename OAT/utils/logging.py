@@ -7,7 +7,53 @@ import threading
 import time
 import uuid
 import weakref
-from PyQt6 import QtCore
+
+try:  # 旧 PyQt 界面仍可选用；FastAPI 后端不依赖 Qt。
+    from PyQt6 import QtCore
+except ImportError:
+    class _BoundSignal:
+        def __init__(self):
+            self._slots = []
+
+        def connect(self, slot):
+            if slot not in self._slots:
+                self._slots.append(slot)
+
+        def disconnect(self, slot=None):
+            if slot is None:
+                self._slots.clear()
+            elif slot in self._slots:
+                self._slots.remove(slot)
+
+        def emit(self, *args):
+            for slot in list(self._slots):
+                slot(*args)
+
+    class _SignalDescriptor:
+        def __init__(self, *types):
+            self._name = ""
+
+        def __set_name__(self, owner, name):
+            self._name = f"_signal_{name}"
+
+        def __get__(self, instance, owner):
+            if instance is None:
+                return self
+            signal = instance.__dict__.get(self._name)
+            if signal is None:
+                signal = _BoundSignal()
+                instance.__dict__[self._name] = signal
+            return signal
+
+    class _QObject:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class _QtCoreFallback:
+        QObject = _QObject
+        pyqtSignal = _SignalDescriptor
+
+    QtCore = _QtCoreFallback()
 
 from loguru import logger as _lq
 
@@ -618,6 +664,7 @@ class _BoundLogger:
 class LogRedirect(QtCore.QObject):
     append_log = QtCore.pyqtSignal(str)
     progress_updated = QtCore.pyqtSignal(int, int)
+    record_updated = QtCore.pyqtSignal(object)
 
     def __init__(self, text_browser=None):
         super().__init__()
@@ -760,6 +807,12 @@ class LogRedirect(QtCore.QObject):
                 pass
             try:
                 _lq.bind(**eff).log(canon, msg_str)
+                self.record_updated.emit({
+                    'timestamp': _get_timestamp(),
+                    'level': canon,
+                    'message': msg_str,
+                    'module': caller,
+                })
             except Exception:
                 pass
         except Exception:

@@ -2,11 +2,21 @@ APP_VERSION = "2.3.4"
 
 import json
 import os
+import shutil
+import sys
 from typing import Optional
 
-# 加载设置配置
+# 加载设置配置：开发环境使用仓库文件，sidecar 使用可写的用户目录。
 current_dir = os.path.dirname(os.path.abspath(__file__))
-settings_file_path = os.path.join(current_dir, 'settings.json')
+if getattr(sys, "frozen", False):
+    settings_dir = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")), "OnmyojiAuto")
+    os.makedirs(settings_dir, exist_ok=True)
+    settings_file_path = os.path.join(settings_dir, "settings.json")
+    bundled_settings = os.path.join(current_dir, "settings.json")
+    if not os.path.exists(settings_file_path) and os.path.exists(bundled_settings):
+        shutil.copyfile(bundled_settings, settings_file_path)
+else:
+    settings_file_path = os.path.join(current_dir, "settings.json")
 from ..utils.logging import logger
 
 # 读取配置文件
