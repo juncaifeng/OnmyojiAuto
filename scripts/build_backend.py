@@ -1,7 +1,6 @@
 """用 uv 管理的 python-build-standalone 解释器构建 FastAPI sidecar。"""
 from __future__ import annotations
 
-import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -16,17 +15,9 @@ def main() -> None:
     if sys.version_info[:2] != (3, 12):
         raise SystemExit("请通过 uv run --python 3.12 运行打包脚本")
 
-    env = os.environ.copy()
-    # only-managed 禁止回退到开发机或 CI 预装的系统 Python。
-    env["UV_PYTHON_PREFERENCE"] = "only-managed"
-    managed = subprocess.run(
-        ["uv", "python", "find", "3.12", "--managed-python"],
-        cwd=ROOT,
-        env=env,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
+    # CI 已通过 UV_PYTHON_PREFERENCE=only-managed 创建此虚拟环境；
+    # _base_executable 指向其 python-build-standalone 基础解释器。
+    managed = getattr(sys, "_base_executable", sys.executable)
     print(f"[backend] python-build-standalone: {managed}")
     subprocess.run(
         [
