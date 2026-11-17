@@ -41,7 +41,7 @@ def main() -> None:
         ROOT / "dist" / "backend" / "oat-backend.exe",
         target_dir / "oat-backend-x86_64-pc-windows-msvc.exe",
     )
-    print("[backend] sidecar 已复制到 frontend/src-tauri/binaries")
+    print("[backend] sidecar copied to frontend/src-tauri/binaries")
 
 
 if __name__ == "__main__":
